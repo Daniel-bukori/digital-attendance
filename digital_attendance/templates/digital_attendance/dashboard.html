@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Student Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; color: #333; }
+        .navbar { background-color: #0056b3; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h2 { margin: 0; font-size: 20px; }
+        .navbar a { color: white; text-decoration: none; background: #dc3545; padding: 8px 15px; border-radius: 4px; font-weight: bold; }
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .alert { background-color: #d4edda; color: #155724; padding: 12px; border-radius: 4px; margin-bottom: 20px; border-left: 5px solid #28a745; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        h3 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #0056b3; margin-top: 0; }
+        select, textarea, input[type="text"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background-color: #0056b3; }
+        .btn-success { background-color: #28a745; }
+        .btn-success:hover { background-color: #218838; }
+        .btn-pdf { background-color: #17a2b8; color: white; text-decoration: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; display: inline-block; font-weight: bold;}
+        .btn-pdf:hover { background-color: #138496; }
+        .announcement-box { background: #fff3cd; border-left: 5px solid #ffc107; padding: 15px; border-radius: 4px; margin-bottom: 15px; }
+        .announcement-box h4 { margin: 0 0 5px 0; color: #856404; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 12px; text-align: left; }
+        th { background-color: #f1f1f1; }
+        .cr-section { border: 2px solid #dc3545; }
+        .cr-badge { background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+        .session-item { background: #f1f7ff; padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 5px solid #007bff; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h2>Digital Attendance Portal</h2>
+        <div>
+            <span>Mtumiaji: <strong>{{ request.user.username }}</strong></span> &nbsp;&nbsp;
+            <a href="{% url 'logout' %}">Ondoka (Logout)</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card">
+            <h3>Rekodi Mahudhurio ya Kipindi</h3>
+            {% if active_session %}
+                <p>Kipindi Kinachosigniwa Sasa: <strong style="color: #0056b3;">{{ active_session.module_code }} - {{ active_session.module_name }}</strong></p>
+                <small style="color: #666;">Kimefunguliwa: {{ active_session.created_at|date:"H:i" }} (Kitajifunga baada ya masaa 2)</small><br><br>
+                
+                {% if already_submitted %}
+                    <p style="color: #28a745; font-weight: bold; background: #e8f5e9; padding: 10px; border-radius: 4px;">✓ Mahudhurio yako ya kipindi hiki yameshawasilishwa kikamilifu!</p>
+                {% else %}
+                    <form action="{% url 'submit_attendance_smart' %}" method="POST" enctype="multipart/form-data" id="attendanceForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="session_id" value="{{ active_session.id }}">
+                        <input type="hidden" name="latitude" class="lat_input">
+                        <input type="hidden" name="longitude" class="lon_input">
+
+                        <label>Hali yako kwa Kipindi Hiki:</label>
+                        <select name="status" id="status" onchange="toggleSickSection()">
+                            <option value="Present">Nipo (Present)</option>
+                            <option value="Sick">Naumwa (Sick)</option>
+                        </select>
+                        
+                        <div id="sick_section" style="display: none; margin-top: 15px;">
+                            <label>Sababu / Maelezo ya Ugonjwa:</label>
+                            <textarea name="reason" rows="3" placeholder="Andika maelezo mafupi hapa..."></textarea>
+                            
+                            <label style="display:block; margin-top:15px;">Pakia Cheti cha Daktari:</label>
+                            <input type="file" name="medical_document" style="margin-top:5px;">
+                        </div>
+                        
+                        <button type="button" class="btn-success" onclick="getStudentLocation('attendanceForm')">Submit Attendance</button>
+                    </form>
+                {% endif %}
+            {% else %}
+                <p style="color: #dc3545; font-weight: bold; background: #fdf3f3; padding: 12px; border-radius: 4px;">🔒 Hakuna kipindi cha mahudhurio kilichofunguliwa kwa sasa au masaa 2 yamepita.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h3>Matangazo ya Darasa (Announcements)</h3>
+            {% for announcement in announcements %}
+                <div class="announcement-box">
+                    <h4>{{ announcement.title }}</h4>
+                    <p style="margin: 5px 0;">{{ announcement.content }}</p>
+                    <small style="color: #666;">Iliwekwa na: {{ announcement.created_by.username }} | {{ announcement.created_at }}</small>
+                </div>
+            {% empty %}
+                <p style="color: #777;">Hakuna matangazo mapya kwa sasa.</p>
+            {% endfor %}
+        </div>
+
+        <div class="card">
+            <h3>Nyaraka za Masomo (Class Materials)</h3>
+            {% for material in materials %}
+                <div style="padding: 10px 0; border-bottom: 1px solid #eee;">
+                    <strong>📂 {{ material.title }}</strong> - <span style="color:#555;">{{ material.description }}</span> <br>
+                    
+                    {% if is_cr %}
+                        <a href="{% url 'view_document' 'material' material.id %}" style="color: #007bff; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 5px;">👁 Fungua na Kusoma Faili</a>
+                    {% else %}
+                        <a href="{{ material.file.url }}" download style="color: #28a745; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 5px;">⬇ Pakua faili (Download)</a>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p style="color: #777;">Hakuna nyaraka zilizowekwa bado.</p>
+            {% endfor %}
+        </div>
+
+        {% if is_cr %}
+        <div class="card cr-section">
+            <h3><span class="cr-badge">Mamlaka ya CR / Lecturer</span> Dashibodi ya Viongozi</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <form action="{% url 'post_announcement' %}" method="POST" style="background:#fcfcfc; padding:15px; border-radius:4px; border:1px solid #ddd;">
+                    {% csrf_token %}
+                    <h4>Tengeneza Tangazo</h4>
+                    <input type="text" name="title" placeholder="Kichwa cha Tangazo" required>
+                    <textarea name="content" rows="3" placeholder="Maudhui ya tangazo..." required></textarea>
+                    <button type="submit" style="background-color: #dc3545;">Rusha Tangazo</button>
+                </form>
+
+                <form action="{% url 'upload_material' %}" method="POST" enctype="multipart/form-data" style="background:#fcfcfc; padding:15px; border-radius:4px; border:1px solid #ddd;">
+                    {% csrf_token %}
+                    <h4>Pakia Nyaraka ya Somo</h4>
+                    <input type="text" name="title" placeholder="Jina la Nyaraka" required>
+                    <textarea name="description" rows="2" placeholder="Maelezo mafupi..."></textarea>
+                    <input type="file" name="file" required style="margin-top:10px; display:block;">
+                    <button type="submit" style="background-color: #dc3545;">Upload Material</button>
+                </form>
+            </div>
+
+            <div style="background: #fff8f8; padding: 20px; border-radius: 6px; border: 1px solid #f5c6cb; margin-bottom: 25px;">
+                <h4>Anzisha Kipindi Kipya cha Mahudhurio (Masaa 2)</h4>
+                <form method="POST" action="{% url 'cr_start_session' %}">
+                    {% csrf_token %}
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label>Jina la Somo (Module Name):</label>
+                            <input type="text" name="module_name" placeholder="Mfano: Cybersecurity Basics" required>
+                        </div>
+                        <div>
+                            <label>Code ya Somo (Module Code):</label>
+                            <input type="text" name="module_code" placeholder="Mfano: CSU 07102" required>
+                        </div>
+                    </div>
+                    <button type="submit" style="background-color: #28a745;">Fungua Mahudhurio Ya Kipindi</button>
+                </form>
+            </div>
+
+            <h4 style="margin-top: 30px;">Ripoti ya Mahudhurio ya Darasa</h4>
+            {% if active_session %}
+                <div style="margin-bottom: 15px;">
+                    <a href="{% url 'download_attendance_pdf' active_session.id %}" class="btn-pdf">🖨 Download Full PDF ({{ active_session.module_code }})</a>
+                </div>
+            {% endif %}
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mwanafunzi (Reg No)</th>
+                        <th>Kipindi (Somo)</th>
+                        <th>Tarehe</th>
+                        <th>Hali</th>
+                        <th>Maelezo ya Kuumwa</th>
+                        <th>Cheti cha Daktari</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for att in all_attendance %}
+                    <tr>
+                        <td>{{ att.student.username }}</td>
+                        <td>{{ att.session.module_code }}</td>
+                        <td>{{ att.date }}</td>
+                        <td>
+                            <span style="padding:3px 8px; border-radius:4px; font-weight:bold; font-size:12px; {% if att.status == 'Present' %} background:#d4edda; color:#155724; {% else %} background:#f8d7da; color:#721c24; {% endif %}">
+                                {{ att.status }}
+                            </td>
+                        <td>{{ att.reason|default:"-" }}</td>
+                        <td>
+                            {% if att.medical_document %}
+                                <a href="{% url 'view_document' 'medical' att.id %}" style="color:#007bff; font-weight:bold;">👁 Kagua Cheti</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #777;">Hakuna mahudhurio yaliyowasilishwa bado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleSickSection() {
+            var status = document.getElementById("status").value;
+            var sickSection = document.getElementById("sick_section");
+            sickSection.style.display = (status === "Sick") ? "block" : "none";
+        }
+
+        function getStudentLocation(formId) {
+            var form = document.getElementById(formId);
+            var status = form.querySelector('#status').value;
+            
+            // 1. Kama mwanafunzi anaumwa (Sick), anaruhusiwa kusubmit moja kwa moja bila GPS kuzuia njaa
+            if (status === 'Sick') {
+                form.submit();
+                return;
+            }
+
+            // 2. Kama ni mzima (Present), GPS inakaguliwa kwa nguvu ya IAA Njiro
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    form.querySelector('.lat_input').value = position.coords.latitude;
+                    form.querySelector('.lon_input').value = position.coords.longitude;
+                    form.submit();
+                }, function(error) {
+                    alert("Ulinzi wa IAA: Umeshindwa kusign Present! Washa Location au ruhusu GPS ya kifaa chako.");
+                });
+            } else {
+                alert("Kifaa chako hakiruhusu ulinzi wa Geolocation.");
+            }
+        }
+    </script>
+</body>
+</html>

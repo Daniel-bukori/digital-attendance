@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <title>Ripoti ya Mahudhurio - {{ session.module_code }}</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #333; margin: 40px; background-color: #fff; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 3px double #333; padding-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
+        .header h2 { margin: 5px 0 0 0; font-size: 16px; color: #555; font-weight: normal; }
+        
+        .meta-info { margin-bottom: 25px; font-size: 14px; line-height: 1.6; }
+        .meta-info table { width: 100%; border: none; }
+        .meta-info td { border: none; padding: 4px 0; }
+        
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .report-table th, .report-table td { border: 1px solid #111; padding: 10px; text-align: left; }
+        .report-table th { background-color: #f2f2f2; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        
+        .status-present { font-weight: bold; color: #27ae60; }
+        .status-sick { font-weight: bold; color: #c0392b; italic; }
+        
+        .footer-sig { margin-top: 60px; width: 100%; display: flex; justify-content: space-between; font-size: 14px; }
+        .sig-box { width: 200px; text-align: center; border-top: 1px solid #333; padding-top: 5px; }
+
+        /* Hapa ndio miujiza inapotokea: Inajifungua dirisha la ku-print/save kama PDF kiotomatiki */
+        @media print {
+            .no-print { display: none; }
+            body { margin: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+        <button onclick="window.print();" style="padding: 10px 20px; background-color: #27ae60; color: white; border: none; font-weight: bold; border-radius: 4px; cursor: pointer;">
+            🖨 Bofya Hapa Ku-Save kama PDF / Print
+        </button>
+    </div>
+
+    <div class="header">
+        <h1>Institute of Accountancy Arusha (IAA)</h1>
+        <h2>Idara ya Cybersecurity na ICT — Ripoti Rasmi ya Mahudhurio</h2>
+    </div>
+
+    <div class="meta-info">
+        <table>
+            <tr>
+                <td><strong>Somo (Module Name):</strong> {{ session.module_name }}</td>
+                <td style="text-align: right;"><strong>Tarehe ya Kipindi:</strong> {{ session.created_at|date:"d-m-Y" }}</td>
+            </tr>
+            <tr>
+                <td><strong>Code ya Somo:</strong> {{ session.module_code }}</td>
+                <td style="text-align: right;"><strong>Muda wa Kipindi:</strong> {{ session.created_at|date:"H:i" }} HRS</td>
+            </tr>
+            <tr>
+                <td><strong>Msimamizi (CR/Lecturer):</strong> {{ session.created_by.first_name }} {{ session.created_by.last_name }}</td>
+                <td></td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th style="width: 5%;">Na.</th>
+                <th style="width: 45%;">Jina Kamili la Mwanafunzi</th>
+                <th style="width: 30%;">Registration Number</th>
+                <th style="width: 20%;">Hali (Status)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ record.student.first_name }} {{ record.student.last_name }}</td>
+                    <td>{{ record.student.username }}</td>
+                    <td>
+                        {% if record.status == 'Present' %}
+                            <span class="status-present">PRESENT</span>
+                        {% else %}
+                            <span class="status-sick">SICK (HAHUDHURII)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #777;">Hakuna mwanafunzi aliyesajiliwa kwenye kipindi hiki.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer-sig">
+        <div class="sig-box">Sahihi ya CR / Lecturer</div>
+        <div class="sig-box" style="margin-left: auto;">Sahihi ya Mkuu wa Idara</div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // Inasubiri sekunde 1 peji iishe kuload kisha inafungua sehem ya kusave PDF
+            setTimeout(function() {
+                window.print();
+            }, 1000);
+        };
+    </script>
+
+</body>
+</html>

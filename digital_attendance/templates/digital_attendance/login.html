@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Digital Attendance</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .login-container { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; box-sizing: border-box; }
+        h2 { text-align: center; color: #333; margin-bottom: 25px; }
+        form p { margin-bottom: 15px; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; padding: 12px; background-color: #007bff; border: none; color: white; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; transition: background 0.3s; }
+        button:hover { background-color: #0056b3; }
+        p.redirect { text-align: center; margin-top: 20px; font-size: 14px; color: #666; }
+        p.redirect a { color: #007bff; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Digital Attendance</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Ingia Mfumo</button>
+        </form>
+        <p class="redirect">Huna akaunti? <a href="{% url 'signup' %}">Jisajili hapa</a></p>
+    </div>
+</body>
+</html>
