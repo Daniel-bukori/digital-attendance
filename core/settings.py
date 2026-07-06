@@ -138,4 +138,14 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-    
+# settings.py
+
+# Inaiambia Django kwamba link yako ya Render ni salama kupokea fomu za Login/Signup
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+]
+
+# Inahakikisha ulinzi wa Cookie unaendana na HTTPS ya Render
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
